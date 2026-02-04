@@ -259,7 +259,7 @@ Incluye un Dockerfile para:
 
 ```bash
 docker build -t notify-core .
-docker run notify-core
+docker run --rm notify-core
 ```
 
 📐 Arquitectura y Diseño
