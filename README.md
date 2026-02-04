@@ -339,9 +339,6 @@ public class CustomEmailProvider
 | Push  | Firebase, OneSignal  |
 
 Nota: Los envíos son simulados mediante logs. No hay llamadas HTTP reales.
-```
-
----
 
 ## ❗ Manejo de errores
 
@@ -358,17 +355,16 @@ Todos los envíos retornan un NotificationResult con:
 - Mensaje (message)
 - Timestamp (timestamp)
 - Causa (cause)
----
 
----
-🔐 Seguridad y Credenciales
+
+## 🔐 Seguridad y Credenciales
 
 - Las credenciales nunca se almacenan en archivos
 - Se recomienda usar variables de entorno
 - Interfaz CredentialsProvider permite abstraer el origen
 - No loguear secretos  
 
----
+
 
 ## 📚 API Reference
 
@@ -385,17 +381,14 @@ Todos los envíos retornan un NotificationResult con:
 | BatchNotificationDispatcher | Batch |
 | NotificationProviderPort | Proveedor |
 
----
 
----
-🧪 Testing
+## 🧪 Testing
 
 La librería incluye tests unitarios básicos según lo requerido por el challenge.
 Los envíos son simulados, no hay dependencias externas.
----
 
----
-🐳 Docker
+
+## 🐳 Docker
 
 Incluye un Dockerfile para:
 - Compilar la librería
@@ -405,9 +398,7 @@ Incluye un Dockerfile para:
 docker build -t notify-core .
 docker run --rm notify-core
 ```
-
-```
-📐 Arquitectura y Diseño
+## 📐 Arquitectura y Diseño
 
 - Principios SOLID
 - Arquitectura Hexagonal
