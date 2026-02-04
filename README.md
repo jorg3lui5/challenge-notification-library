@@ -31,7 +31,7 @@ El objetivo es permitir cambiar proveedores o canales sin modificar el código c
 <dependency>
   <groupId>com.challenge.jorgebarreto</groupId>
   <artifactId>notify-core</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0.0</version>
 </dependency>
 ```
 
@@ -39,7 +39,7 @@ El objetivo es permitir cambiar proveedores o canales sin modificar el código c
 ```java
 EmailChannel emailChannel =
     new EmailChannel(
-        new MailgunEmailProvider("fake-token"),
+        new MailgunEmailProvider("MAILGUN_API_KEY"),
         List.of()
     );
 
@@ -68,27 +68,114 @@ client.send(
     new EmailNotification(
         "test@test.com",
         "Hello",
-        "This is a test",
+        "This is a test message",
         Map.of()
     )
 );
 ```
 
+
+---
+
+## 📡 Canales soportados
+
+### ✉️ Email
+
+```java
+EmailChannel emailChannel =
+    new EmailChannel(
+        new MailgunEmailProvider("MAILGUN_TOKEN"),
+        List.of()
+    );
+```
+
+**Validaciones incluidas:**
+- Email válido  
+- Recipient y message obligatorios  
+
+---
+
+### 📱 SMS
+
+```java
+SmsNotificationChannel smsChannel =
+    new SmsNotificationChannel(
+        new NexmoSmsProvider("API_KEY", "API_SECRET"),
+        List.of()
+    );
+```
+
+**Validaciones incluidas:**
+- Número de teléfono válido (E.164)  
+- Recipient y message obligatorios  
+
+---
+
+### 🔔 Push Notification
+
+```java
+PushNotificationChannel pushChannel =
+    new PushNotificationChannel(
+        new FirebasePushProvider("FIREBASE_CREDENTIALS"),
+        List.of()
+    );
+```
+
+**Validaciones incluidas:**
+- Token de push válido  
+- Recipient y message obligatorios  
+
+---
+
 ⚙️ Configuración
 
 Toda la configuración se realiza mediante código Java:
 
-- Registro de canales mediante NotificationDispatcherBuilder
-- Proveedores inyectados en los canales
-- Credenciales gestionadas por interfaces (CredentialsProvider)
+- Registro de canales mediante `NotificationDispatcherBuilder`
+- Inyección de proveedores por constructor
+- Soporte para múltiples proveedores por canal
+- Configuración de reintentos sin modificar el core
 
-Ejemplo:
+Ejemplo con reintentos:
+
 ```java
-NotificationDispatcherBuilder.builder()
-    .withRetry(3)
-    .registerChannel(SmsNotification.class, smsChannel)
-    .build();
+NotificationDispatcher dispatcher =
+    NotificationDispatcherBuilder.builder()
+        .withRetry(3)
+        .registerChannel(EmailNotification.class, emailChannel)
+        .registerChannel(SmsNotification.class, smsChannel)
+        .build();
 ```
+
+---
+
+## 🔁 Reintentos
+
+La librería incluye un sistema de reintentos basado en el patrón **Decorator**.
+
+- Reintenta solo errores de envío  
+- No reintenta errores de validación ni configuración  
+- Totalmente configurable  
+
+---
+
+## ⏱️ Envíos Asíncronos y en Lote
+
+### Envío asíncrono
+
+```java
+CompletableFuture<NotificationResult> future =
+    client.sendAsync(notification);
+```
+
+### Envío en lote
+
+```java
+CompletableFuture<List<NotificationResult>> results =
+    client.sendBatchAsync(List.of(n1, n2, n3));
+```
+
+---
 
 🔌 Proveedores Soportados (Simulados)
 
@@ -126,6 +213,38 @@ Todos los envíos retornan un NotificationResult con:
 - Las credenciales nunca se almacenan en archivos
 - Se recomienda usar variables de entorno
 - Interfaz CredentialsProvider permite abstraer el origen
+- No loguear secretos  
+
+---
+
+## 📚 API Reference
+
+| Clase | Descripción |
+|------|------------|
+| Notification | Interfaz base de notificación |
+| NotificationChannel | Canal de envío |
+| NotificationDispatcher | Orquestador principal |
+| NotificationDispatcherBuilder | Configuración |
+| NotificationClient | API pública |
+| NotificationResult | Resultado |
+| RetryNotificationChannel | Reintentos |
+| AsyncNotificationDispatcher | Async |
+| BatchNotificationDispatcher | Batch |
+| NotificationProviderPort | Proveedor |
+
+---
+
+## 🔌 Extensibilidad
+
+Agregar un nuevo canal implica:
+
+1. Crear una implementación de `Notification`
+2. Crear un `NotificationChannel`
+3. Implementar un `NotificationProviderPort`
+4. Registrar el canal
+
+---
+
 
 🧪 Testing
 
