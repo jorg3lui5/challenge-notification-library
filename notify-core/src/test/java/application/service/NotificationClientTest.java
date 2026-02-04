@@ -24,7 +24,7 @@ class NotificationClientTest {
         NotificationChannelRegistry registry =
                 new NotificationChannelRegistry();
         KafkaNotificationEventPublisher eventPublisher =
-                new KafkaNotificationEventPublisher
+                new KafkaNotificationEventPublisher();
 
         registry.register(
                 SmsNotification.class,
