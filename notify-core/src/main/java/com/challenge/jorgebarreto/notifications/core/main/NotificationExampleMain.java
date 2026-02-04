@@ -19,12 +19,14 @@ import com.challenge.jorgebarreto.notifications.core.infraestructure.adapter.out
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class NotificationExampleMain {
 
     public static void main(String[] args) {
 
-        System.out.println("=== NOTIFICATION LIBRARY DEMO START ===");
+        log.info("=== NOTIFICATION LIBRARY DEMO START ===");
 
         // -------------------------
         // Providers
@@ -50,7 +52,6 @@ public class NotificationExampleMain {
         PushChannel pushChannel =
                 new PushChannel(firebase, List.of());
 
-        // Composite channel (multiple providers simulation)
         CompositeNotificationChannel<EmailNotification> compositeEmail =
                 new CompositeNotificationChannel<>(
                         List.of(emailChannel)
@@ -85,7 +86,7 @@ public class NotificationExampleMain {
         // -------------------------
         // 1. SUCCESS CASE
         // -------------------------
-        System.out.println("\n--- SUCCESS EMAIL ---");
+        log.info("--- SUCCESS EMAIL ---");
         client.send(
                 new EmailNotification(
                         "test@test.com",
@@ -98,10 +99,10 @@ public class NotificationExampleMain {
         // -------------------------
         // 2. VALIDATION ERROR
         // -------------------------
-        System.out.println("\n--- VALIDATION ERROR ---");
+        log.info("--- VALIDATION ERROR ---");
         client.send(
                 new SmsNotification(
-                        "123", // invalid phone
+                        "123",
                         "Hello"
                 )
         );
@@ -109,7 +110,7 @@ public class NotificationExampleMain {
         // -------------------------
         // 3. PROVIDER FAILURE + RETRY
         // -------------------------
-        System.out.println("\n--- PROVIDER FAILURE + RETRY ---");
+        log.info("--- PROVIDER FAILURE + RETRY ---");
         client.send(
                 new SmsNotification(
                         "+593999999999",
@@ -120,7 +121,7 @@ public class NotificationExampleMain {
         // -------------------------
         // 4. PUSH FAILURE
         // -------------------------
-        System.out.println("\n--- PUSH FAILURE ---");
+        log.info("--- PUSH FAILURE ---");
         client.send(
                 new PushNotification(
                         "valid-push-token-12345",
@@ -133,7 +134,7 @@ public class NotificationExampleMain {
         // -------------------------
         // 5. ASYNC SEND
         // -------------------------
-        System.out.println("\n--- ASYNC SEND ---");
+        log.info("--- ASYNC SEND ---");
         client.sendAsync(
                 new EmailNotification(
                         "async@test.com",
@@ -141,14 +142,14 @@ public class NotificationExampleMain {
                         "Async message",
                         Map.of()
                 )
-        ).thenAccept(r ->
-                System.out.println("Async result success=" + r.isSuccess())
+        ).thenAccept(result ->
+                log.info("Async result success={}", result.isSuccess())
         ).join();
 
         // -------------------------
         // 6. BATCH SEND
         // -------------------------
-        System.out.println("\n--- BATCH SEND ---");
+        log.info("--- BATCH SEND ---");
         client.sendBatchAsync(
                 List.of(
                         new EmailNotification(
@@ -169,14 +170,15 @@ public class NotificationExampleMain {
                         )
                 )
         ).thenAccept(results -> {
-            System.out.println("Batch results:");
+            log.info("Batch results:");
             results.forEach(r ->
-                    System.out.println(" - success=" + r.isSuccess() +
-                            " code=" + r.getErrorCode())
+                    log.info(" - success={} code={}",
+                            r.isSuccess(),
+                            r.getErrorCode())
             );
         }).join();
 
-        System.out.println("\n=== NOTIFICATION LIBRARY DEMO END ===");
+        log.info("=== NOTIFICATION LIBRARY DEMO END ===");
     }
 }
 
