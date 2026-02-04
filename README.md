@@ -19,7 +19,7 @@ El objetivo es permitir cambiar proveedores o canales sin modificar el código c
 - Envío síncrono, asíncrono y en lote
 - Sistema de reintentos configurable
 - Validaciones extensibles
-- Arquitectura agnóstica a frameworks
+- Sin dependencias de frameworks
 
 ---
 
@@ -155,24 +155,177 @@ La librería incluye un sistema de reintentos basado en el patrón **Decorator**
 
 - Reintenta solo errores de envío  
 - No reintenta errores de validación ni configuración  
-- Totalmente configurable  
+- Totalmente configurable
 
+### ¿Cómo funcionan los reintentos?
+
+- Los reintentos se aplican **por canal**
+- Cada notificación se procesa **de forma independiente**
+- El retry envuelve al canal mediante el patrón **Decorator**
+
+```java
+NotificationDispatcher dispatcher =
+    NotificationDispatcherBuilder.builder()
+        .withRetry(2)
+        .registerChannel(EmailNotification.class, emailChannel)
+        .build();
+```
+
+### Semántica exacta
+
+- `withRetry(0)` → 1 intento total
+- `withRetry(2)` → 1 intento inicial + 2 reintentos (3 intentos en total)
+
+### ¿Cuándo se reintenta?
+
+- ✅ Errores de proveedor
+- ❌ Errores de validación
+- ❌ Errores de configuración
+
+### ¿Aplica a async y batch?
+
+Sí:
+- Envío síncrono: retry inmediato
+- Envío asíncrono: retry dentro del `CompletableFuture`
+- Batch: cada notificación aplica retry de forma individual
+
+---
 ---
 
 ## ⏱️ Envíos Asíncronos y en Lote
 
-### Envío asíncrono
+## ⏱️ Envío asíncrono
 
 ```java
 CompletableFuture<NotificationResult> future =
     client.sendAsync(notification);
 ```
 
-### Envío en lote
+- No bloquea el hilo llamador
+- Usa `Executor` configurable
+- Maneja excepciones técnicas automáticamente
+
+---
+
+## 📦 Envío en batch
 
 ```java
 CompletableFuture<List<NotificationResult>> results =
     client.sendBatchAsync(List.of(n1, n2, n3));
+```
+
+Características:
+- Cada notificación se procesa de forma independiente
+- Soporta resultados parciales
+- Los retries aplican por notificación
+
+---
+## 🔗 Múltiples canales y proveedores
+
+### Registrar múltiples canales
+
+```java
+dispatcherBuilder
+    .registerChannel(EmailNotification.class, emailChannel)
+    .registerChannel(SmsNotification.class, smsChannel)
+    .registerChannel(PushNotification.class, pushChannel);
+```
+
+### Múltiples proveedores (Composite)
+
+```java
+CompositeNotificationChannel<EmailNotification> compositeEmail =
+    new CompositeNotificationChannel<>(
+        List.of(mailgunChannel, sendGridChannel)
+    );
+```
+
+- Todos los proveedores se ejecutan
+- Retorna éxito total o fallo parcial
+
+---
+
+## 🧩 Extensibilidad
+
+### Crear un nuevo canal
+
+Ejemplo: WhatsApp
+
+#### 1️⃣ Crear la notificación
+
+```java
+public record WhatsAppNotification(
+    String recipient,
+    String message
+) implements Notification {}
+```
+
+#### 2️⃣ Crear el proveedor
+
+```java
+public class WhatsAppProvider
+        implements NotificationProviderPort<WhatsAppNotification> {
+
+    @Override
+    public ProviderResult send(WhatsAppNotification notification) {
+        return ProviderResult.ok();
+    }
+}
+```
+
+#### 3️⃣ Crear el canal
+
+```java
+public class WhatsAppChannel
+        implements NotificationChannel<WhatsAppNotification> {
+
+    private final NotificationProviderPort<WhatsAppNotification> provider;
+
+    @Override
+    public NotificationResult send(WhatsAppNotification notification) {
+        ProviderResult result = provider.send(notification);
+
+        return result.success()
+            ? NotificationResult.success()
+            : NotificationResult.failure(
+                result.errorCode(),
+                result.message(),
+                result.cause()
+            );
+    }
+}
+```
+
+#### 4️⃣ Registrar el canal
+
+```java
+dispatcherBuilder.registerChannel(
+    WhatsAppNotification.class,
+    new WhatsAppChannel(new WhatsAppProvider())
+);
+```
+
+---
+
+## 🔌 Crear un proveedor personalizado
+
+Solo debes implementar:
+
+```java
+NotificationProviderPort<T>
+```
+
+Ejemplo:
+
+```java
+public class CustomEmailProvider
+        implements NotificationProviderPort<EmailNotification> {
+
+    @Override
+    public ProviderResult send(EmailNotification notification) {
+        return ProviderResult.ok();
+    }
+}
 ```
 
 ---
@@ -186,13 +339,17 @@ CompletableFuture<List<NotificationResult>> results =
 | Push  | Firebase, OneSignal  |
 
 Nota: Los envíos son simulados mediante logs. No hay llamadas HTTP reales.
+```
 
-❗ Manejo de Errores
+---
 
-La librería distingue claramente entre:
+## ❗ Manejo de errores
 
-- Errores de validación (VALIDATION)
-- Errores del proveedor (PROVIDER)
+Tipos de errores:
+
+- VALIDATION
+- PROVIDER
+- CONFIGURATION
 
 Todos los envíos retornan un NotificationResult con:
 
@@ -201,13 +358,9 @@ Todos los envíos retornan un NotificationResult con:
 - Mensaje (message)
 - Timestamp (timestamp)
 - Causa (cause)
+---
 
-🔁 Envío Asíncrono y en Lote
-
-- Envío asíncrono con CompletableFuture
-- Envío en batch con agregación de resultados
-- Soporte para resultados parciales (CompositeNotificationResult)
-
+---
 🔐 Seguridad y Credenciales
 
 - Las credenciales nunca se almacenan en archivos
@@ -234,23 +387,14 @@ Todos los envíos retornan un NotificationResult con:
 
 ---
 
-## 🔌 Extensibilidad
-
-Agregar un nuevo canal implica:
-
-1. Crear una implementación de `Notification`
-2. Crear un `NotificationChannel`
-3. Implementar un `NotificationProviderPort`
-4. Registrar el canal
-
 ---
-
-
 🧪 Testing
 
 La librería incluye tests unitarios básicos según lo requerido por el challenge.
 Los envíos son simulados, no hay dependencias externas.
+---
 
+---
 🐳 Docker
 
 Incluye un Dockerfile para:
@@ -262,9 +406,11 @@ docker build -t notify-core .
 docker run --rm notify-core
 ```
 
+```
 📐 Arquitectura y Diseño
 
 - Principios SOLID
+- Arquitectura Hexagonal
 - Patrones utilizados:
   - Strategy
   - Builder
