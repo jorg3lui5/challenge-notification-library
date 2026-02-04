@@ -91,8 +91,8 @@ public class NotificationExampleMain {
                 new EmailNotification(
                         "test@test.com",
                         "Hello",
-                        "Email OK",
-                        Map.of()
+                        "Hola {{name}}, tu pedido {{orderId}} fue enviado",
+                        Map.of("name", "Jorge", "orderId", "12345")
                 )
         );
 

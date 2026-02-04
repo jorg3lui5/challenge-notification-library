@@ -6,6 +6,7 @@ import com.challenge.jorgebarreto.notifications.core.domain.model.SmsNotificatio
 import com.challenge.jorgebarreto.notifications.core.domain.result.NotificationResult;
 import com.challenge.jorgebarreto.notifications.core.domain.result.ProviderResult;
 import com.challenge.jorgebarreto.notifications.core.infraestructure.adapter.output.channel.SmsChannel;
+import com.challenge.jorgebarreto.notifications.core.infraestructure.adapter.output.publisher.KafkaNotificationEventPublisher;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -19,13 +20,16 @@ class NotificationDispatcherTest {
         NotificationChannelRegistry registry =
                 new NotificationChannelRegistry();
 
+        KafkaNotificationEventPublisher eventPublisher =
+                new KafkaNotificationEventPublisher();
+
         registry.register(
                 SmsNotification.class,
                 n -> NotificationResult.success()
         );
 
         NotificationDispatcher dispatcher =
-                new NotificationDispatcher(registry);
+                new NotificationDispatcher(registry, eventPublisher);
 
         NotificationResult result =
                 dispatcher.send(new SmsNotification("+593", "hello"));
@@ -36,7 +40,7 @@ class NotificationDispatcherTest {
     @Test
     void shouldFailOnNullNotification() {
         NotificationDispatcher dispatcher =
-                new NotificationDispatcher(new NotificationChannelRegistry());
+                new NotificationDispatcher(new NotificationChannelRegistry(), new KafkaNotificationEventPublisher());
 
         NotificationResult result = dispatcher.send(null);
 
@@ -48,7 +52,7 @@ class NotificationDispatcherTest {
     void shouldFailWhenNoChannelRegistered() {
 
         NotificationDispatcher dispatcher =
-                new NotificationDispatcher(new NotificationChannelRegistry());
+                new NotificationDispatcher(new NotificationChannelRegistry(), new KafkaNotificationEventPublisher());
 
         NotificationResult result =
                 dispatcher.send(new SmsNotification("+593", "hi"));
@@ -62,6 +66,8 @@ class NotificationDispatcherTest {
 
         NotificationChannelRegistry registry =
                 new NotificationChannelRegistry();
+        KafkaNotificationEventPublisher eventPublisher =
+                new KafkaNotificationEventPublisher();
 
         SmsChannel smsChannel =
                 new SmsChannel(
@@ -72,7 +78,7 @@ class NotificationDispatcherTest {
         registry.register(SmsNotification.class, smsChannel);
 
         NotificationDispatcher dispatcher =
-                new NotificationDispatcher(registry);
+                new NotificationDispatcher(registry, eventPublisher);
 
         // Teléfono inválido
         NotificationResult result =

@@ -5,6 +5,7 @@ import com.challenge.jorgebarreto.notifications.core.application.dispacher.Notif
 import com.challenge.jorgebarreto.notifications.core.application.registry.NotificationChannelRegistry;
 import com.challenge.jorgebarreto.notifications.core.domain.model.SmsNotification;
 import com.challenge.jorgebarreto.notifications.core.domain.result.NotificationResult;
+import com.challenge.jorgebarreto.notifications.core.infraestructure.adapter.output.publisher.KafkaNotificationEventPublisher;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -19,13 +20,16 @@ class AsyncNotificationDispatcherTest {
         NotificationChannelRegistry registry =
                 new NotificationChannelRegistry();
 
+        KafkaNotificationEventPublisher eventPublisher =
+                new KafkaNotificationEventPublisher();
+
         registry.register(
                 SmsNotification.class,
                 n -> NotificationResult.success()
         );
 
         NotificationDispatcher dispatcher =
-                new NotificationDispatcher(registry);
+                new NotificationDispatcher(registry, eventPublisher);
 
         AsyncNotificationDispatcher async =
                 new AsyncNotificationDispatcher(
