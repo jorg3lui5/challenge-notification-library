@@ -4,6 +4,7 @@ import com.challenge.jorgebarreto.notifications.core.application.port.output.Not
 import com.challenge.jorgebarreto.notifications.core.domain.exception.SendNotificationException;
 import com.challenge.jorgebarreto.notifications.core.domain.model.Notification;
 import com.challenge.jorgebarreto.notifications.core.domain.model.PushNotification;
+import com.challenge.jorgebarreto.notifications.core.domain.result.ProviderResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,11 +15,16 @@ public class FirebasePushProvider implements NotificationProviderPort<PushNotifi
     private final String credentials;
 
     @Override
-    public void send(PushNotification notification) {
+    public ProviderResult send(PushNotification notification) {
         log.info("Sending PUSH notification to {}", notification.recipient());
 
         if (notification.message().contains("FAIL")) {
-            throw new SendNotificationException("Firebase Push failed");
+            return ProviderResult.failure(
+                    "PROVIDER",
+                    "Firebase Push failed",
+                    null
+            );
         }
+        return ProviderResult.ok();
     }
 }

@@ -25,7 +25,7 @@ class CompositeNotificationChannelTest {
                 composite.send(new SmsNotification("+5939", "hi"));
 
         assertTrue(result.isSuccess());
-        assertTrue(result instanceof CompositeNotificationResult);
+        assertInstanceOf(CompositeNotificationResult.class, result);
     }
 
     @Test

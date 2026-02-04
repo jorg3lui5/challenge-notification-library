@@ -45,4 +45,19 @@ class RetryNotificationChannelTest {
         assertFalse(result.isSuccess());
         assertEquals("VALIDATION", result.getErrorCode());
     }
+
+    @Test
+    void shouldRetryOnlyOnProviderError() {
+        NotificationChannel<SmsNotification> fail =
+                n -> NotificationResult.failure("PROVIDER", "fail", null);
+
+        RetryNotificationChannel<SmsNotification> retry =
+                new RetryNotificationChannel<>(fail, 2);
+
+        NotificationResult result =
+                retry.send(new SmsNotification("+593999999", "hi"));
+
+        assertFalse(result.isSuccess());
+        assertEquals("PROVIDER", result.getErrorCode());
+    }
 }

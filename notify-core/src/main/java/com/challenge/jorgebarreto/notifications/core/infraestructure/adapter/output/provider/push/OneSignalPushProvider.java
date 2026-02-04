@@ -4,6 +4,7 @@ import com.challenge.jorgebarreto.notifications.core.application.port.output.Not
 import com.challenge.jorgebarreto.notifications.core.domain.exception.SendNotificationException;
 import com.challenge.jorgebarreto.notifications.core.domain.model.Notification;
 import com.challenge.jorgebarreto.notifications.core.domain.model.PushNotification;
+import com.challenge.jorgebarreto.notifications.core.domain.result.ProviderResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,14 +16,18 @@ public class OneSignalPushProvider implements NotificationProviderPort<PushNotif
     private final String appId;
 
     @Override
-    public void send(PushNotification notification) {
+    public ProviderResult send(PushNotification notification) {
         log.info("Sending PUSH via OneSignal to {}", notification.recipient());
 
         // Simulación de error real
         if (notification.message().contains("FAIL")) {
-            throw new SendNotificationException("OneSignal failed to send push notification");
+            return ProviderResult.failure(
+                    "PROVIDER",
+                    "OneSignal failed to send push notification",
+                    null
+            );
         }
-
         log.info("Push notification successfully sent via OneSignal");
+        return ProviderResult.ok();
     }
 }

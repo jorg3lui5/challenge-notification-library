@@ -4,6 +4,7 @@ import com.challenge.jorgebarreto.notifications.core.application.port.output.Not
 import com.challenge.jorgebarreto.notifications.core.domain.exception.SendNotificationException;
 import com.challenge.jorgebarreto.notifications.core.domain.model.EmailNotification;
 import com.challenge.jorgebarreto.notifications.core.domain.model.Notification;
+import com.challenge.jorgebarreto.notifications.core.domain.result.ProviderResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,11 +15,16 @@ public class SendGridEmailProvider implements NotificationProviderPort<EmailNoti
     private final String apiKey;
 
     @Override
-    public void send(EmailNotification notification) {
+    public ProviderResult send(EmailNotification notification) {
         log.info("Sending EMAIL to {}", notification.recipient());
 
         if (notification.message().contains("FAIL")) {
-            throw new SendNotificationException("SendGrid failure");
+            return ProviderResult.failure(
+                    "PROVIDER",
+                    "SendGrid failure",
+                    null
+            );
         }
+        return ProviderResult.ok();
     }
 }

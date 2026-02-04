@@ -3,6 +3,7 @@ package com.challenge.jorgebarreto.notifications.core.infraestructure.adapter.ou
 import com.challenge.jorgebarreto.notifications.core.application.port.output.NotificationProviderPort;
 import com.challenge.jorgebarreto.notifications.core.domain.model.EmailNotification;
 import com.challenge.jorgebarreto.notifications.core.domain.model.Notification;
+import com.challenge.jorgebarreto.notifications.core.domain.result.ProviderResult;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -15,7 +16,17 @@ private final String token;
     }
 
     @Override
-    public void send(EmailNotification notification) {
+    public ProviderResult send(EmailNotification notification) {
+
         log.info("Simulating Mailgun EMAIL to {}", notification.recipient());
+
+        if (notification.message().contains("FAIL")) {
+            return ProviderResult.failure(
+                    "PROVIDER",
+                    "Mailgun failure",
+                    null
+            );
+        }
+        return ProviderResult.ok();
     }
 }

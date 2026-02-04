@@ -4,6 +4,7 @@ import com.challenge.jorgebarreto.notifications.core.application.dispacher.Notif
 import com.challenge.jorgebarreto.notifications.core.application.registry.NotificationChannelRegistry;
 import com.challenge.jorgebarreto.notifications.core.domain.model.SmsNotification;
 import com.challenge.jorgebarreto.notifications.core.domain.result.NotificationResult;
+import com.challenge.jorgebarreto.notifications.core.domain.result.ProviderResult;
 import com.challenge.jorgebarreto.notifications.core.infraestructure.adapter.output.channel.SmsChannel;
 import org.junit.jupiter.api.Test;
 
@@ -64,9 +65,7 @@ class NotificationDispatcherTest {
 
         SmsChannel smsChannel =
                 new SmsChannel(
-                        notification -> {
-                            // no hace nada
-                        },
+                        notification -> ProviderResult.ok(),
                         List.of()
                 );
 
