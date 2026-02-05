@@ -245,6 +245,76 @@ CompositeNotificationChannel<EmailNotification> compositeEmail =
 
 ---
 
+## 📝 Templates de Mensajes
+
+La librería soporta templates simples para personalizar mensajes dinámicamente,
+especialmente útiles en notificaciones por Email.
+
+Los templates utilizan placeholders con el formato:
+
+{{variable}}
+
+Ejemplo:
+
+```java
+client.send(
+    new EmailNotification(
+        "user@test.com",
+        "Pedido enviado",
+        "Hola {{name}}, tu pedido {{orderId}} fue enviado",
+        Map.of(
+            "name", "Jorge",
+            "orderId", "12345"
+        )
+    )
+);
+```
+Antes del envío, el motor de templates reemplaza automáticamente las variables
+usando el mapa de atributos.
+
+Actualmente se utiliza un motor simple y extensible,
+pensado para evolucionar hacia soluciones más avanzadas sin afectar el core.
+
+---
+
+## 📣 Publicación de Eventos (Pub/Sub)
+
+La librería incluye un sistema de publicación de eventos para notificar el
+resultado de cada envío, siguiendo el patrón **Publisher / Subscriber**.
+
+Cada envío genera un `NotificationEvent` que contiene:
+
+- Tipo de notificación
+- Destinatario
+- Resultado (success / failure)
+- Código de error
+- Timestamp
+
+### Publishers disponibles
+
+- `InMemoryNotificationEventPublisher`  
+  Para pruebas o listeners locales
+- `KafkaNotificationEventPublisher`  
+  Simulación de publicación de eventos a Kafka
+- `NoOpNotificationEventPublisher`  
+  Ignora los eventos (default)
+
+### Ejemplo con listener
+
+```java
+NotificationDispatcher dispatcher =
+    NotificationDispatcherBuilder.builder()
+        .withEventPublisher(new InMemoryNotificationEventPublisher())
+        .addListener(new LoggingNotificationListener())
+        .registerChannel(EmailNotification.class, emailChannel)
+        .build();
+```
+Este diseño permite integrar fácilmente métricas, auditoría,
+logging o sistemas externos sin acoplar el core de la librería.
+
+
+---
+
 ## 🧩 Extensibilidad
 
 ### Crear un nuevo canal
@@ -410,6 +480,18 @@ docker run --rm notify-core
   - Composite
 
 El diseño permite agregar nuevos canales o proveedores sin modificar el código existente.
+
+### Flujo General
+
+1. El cliente envía una `Notification`
+2. El `NotificationDispatcher` resuelve el canal
+3. El canal valida y delega al proveedor
+4. Se aplica retry si corresponde
+5. Se publica el evento de resultado
+
+Este flujo permite mantener responsabilidades claras y bajo acoplamiento.
+
+---
 
 🤖 Uso de IA
 
